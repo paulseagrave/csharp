@@ -39,25 +39,16 @@ namespace SimpleAsync
             }
         }
 
-        private static Task<Results> GetAsyncTask(int i)
+        private static async Task<Results> GetAsyncTask(int i)
         {
-            Func<Results> func = () =>
+            Random rand = new Random();
+            int sleepMillis = rand.Next(1000);
+            Thread.Sleep(sleepMillis);
+            return new Results()
             {
-
-
-                Random rand = new Random();
-                int sleepMillis = rand.Next(1000,5000);
-                Thread.Sleep(sleepMillis);
-                return new Results()
-                {
-                    Index = i,
-                    Message = String.Format("{0} Slept for {1} milliseconds", i, sleepMillis)
-                };
+                Index = i,
+                Message = String.Format("{0} Slept for {1} milliseconds", i, sleepMillis)
             };
-
-            var t = new Task<Results>(func);
-            t.Start();
-            return t;
         }
     }
 
