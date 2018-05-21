@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Runtime.CompilerServices;
-using System.Security.Cryptography;
-using System.Threading;
+﻿﻿using System;
+ using System.Collections.Generic;
+ using System.Linq;
+ using System.Net.Http;
+ using System.Threading;
 using System.Threading.Tasks;
 
 namespace AsyncApiClient
@@ -58,25 +53,26 @@ namespace AsyncApiClient
             List<string> urlList = SetUpURLList();
 
             // ***Create a query that, when executed, returns a collection of tasks.  
-            IEnumerable<Task<DownloadContent>> downloadTasksQuery =
+            IEnumerable<Task<RoleSkills>> downloadTasksQuery =
                 from url in urlList select ProcessURL(url, client, ct);
 
             // ***Use ToList to execute the query and start the tasks.   
-            List<Task<DownloadContent>> downloadTasks = downloadTasksQuery.ToList();
+            List<Task<RoleSkills>> downloadTasks = downloadTasksQuery.ToList();
 
             // ***Add a loop to process the tasks one at a time until none remain.  
             while (downloadTasks.Count > 0)
             {
                 // Identify the first task that completes.  
-                Task<DownloadContent> firstFinishedTask = await Task.WhenAny(downloadTasks);
-
+                Task<RoleSkills> firstFinishedTask = await Task.WhenAny(downloadTasks);
+ 
                 // ***Remove the selected task from the list so that you don't  
                 // process it more than once.  
                 downloadTasks.Remove(firstFinishedTask);
 
                 // Await the completed task.  
-                DownloadContent content  = await firstFinishedTask;
-                Console.WriteLine( String.Format("\r\nLength of the download:  {0} for URL {1}", content.contentLength, content.url) );
+                RoleSkills content  = await firstFinishedTask;
+                Console.WriteLine("Role: {0}", content.Role);
+                Console.WriteLine("Skills: {0}\n\n", String.Join(",", content.Skills));
             }
         }
 
@@ -84,36 +80,31 @@ namespace AsyncApiClient
         {
             List<string> urls = new List<string>
             {
-                "http://msdn.microsoft.com",
-                "http://msdn.microsoft.com/library/windows/apps/br211380.aspx",
-                "http://msdn.microsoft.com/library/hh290136.aspx",
-                "http://msdn.microsoft.com/library/dd470362.aspx",
-                "http://msdn.microsoft.com/library/aa578028.aspx",
-                "http://msdn.microsoft.com/library/ms404677.aspx",
-                "http://msdn.microsoft.com/library/ff730837.aspx"
+                "http://candidate.stream.jobsite.co.uk:20007/v1/role/skills?role=business%20analyst",
+                "http://candidate.stream.jobsite.co.uk:20007/v1/role/skills?role=lorry%20driver",
+                "http://candidate.stream.jobsite.co.uk:20007/v1/role/skills?role=project%20manager",
+                "http://candidate.stream.jobsite.co.uk:20007/v1/role/skills?role=software%20developer"
             };
             return urls;
         }
 
-        private static async Task<DownloadContent> ProcessURL(string url, HttpClient client, CancellationToken ct)
+        private static async Task<RoleSkills> ProcessURL(string url, HttpClient client, CancellationToken ct)
         {
             // GetAsync returns a Task<HttpResponseMessage>.   
             HttpResponseMessage response = await client.GetAsync(url, ct);
 
             // Retrieve the website contents from the HttpResponseMessage.  
-            byte[] urlContents = await response.Content.ReadAsByteArrayAsync();
-
-            return new DownloadContent
-            {
-                contentLength = urlContents.Length,
-                url = url
-            };
+            RoleSkills roleSkills = await response.Content.ReadAsAsync<RoleSkills>();
+            return roleSkills;
         }
 
-        private class DownloadContent
+
+
+        private class RoleSkills
         {
-            public int contentLength { get; set; }
-            public string url { get; set; }
+            public string Role { get; set; }
+
+            public String[] Skills { get; set; }
         }
 
     }
